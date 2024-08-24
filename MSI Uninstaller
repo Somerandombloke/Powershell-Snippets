@@ -5,10 +5,10 @@ function UninstallMSI($PackageName, $PackageVersion) {
 	    try {
             write-host "Software: $PackageName version $PackageVersion detected and being removed"
             uninstall-package -providername msi -name $PackageName -Requiredversion $PackageVersion
-        }
-        catch {
-        write-host "uninstall failed - please try the again if required"
-        }
+            }
+            catch {
+            write-host "uninstall failed - please try the again if required"
+            }
     } else {
     write-host "$PackageName not detected"
     }
