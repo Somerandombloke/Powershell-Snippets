@@ -1,0 +1,17 @@
+
+function UninstallMSI($PackageName, $PackageVersion) {
+    write-host "Attempting to uninstall existing $PackageName software...."
+    if (get-package -name "$PackageName" -RequiredVersion $PackageVersion -ErrorAction SilentlyContinue){
+	    try {
+            write-host "Software: $PackageName version $PackageVersion detected and being removed"
+            uninstall-package -providername msi -name $PackageName -Requiredversion $PackageVersion
+        }
+        catch {
+        write-host "uninstall failed - please try the again if required"
+        }
+    } else {
+    write-host "$PackageName not detected"
+    }
+}
+
+UninstallMSI "Name" Version
