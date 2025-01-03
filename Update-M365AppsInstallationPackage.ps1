@@ -28,6 +28,7 @@
     1.0.0 - (2020-12-30) Script created
     2.0.0 - (2024-11-07) Updated to use Garytown logic to download latest ODT and detect/update version, changed detection method & hardcoded additional paramters
     2.0.1 - (2024-12-17) Added Deadline offset and associated logic to change deployment deadline if required (to reduce network traffic from enforced global deplyments if using MECM to update Office)
+    2.0.2 - (2025-01-03) Changed ODT Download URL logic due to MS website changes
 #>
 
 #Set Office App Name & corresponding Deployment Type Name
@@ -45,9 +46,7 @@ $Path = "\\nmh-sccm01\SCCM\SourceFiles\Applications\Microsoft\Microsoft_Office_3
 #First check that download.xml exists as this is a fatal error
 if (Test-Path $path\Download.XML) {
 
-    $ODTURL = "https://www.microsoft.com/en-us/download/confirmation.aspx?id=49117"
-    $ODTURLInfo = Invoke-WebRequest -UseBasicParsing -Uri $ODTURL
-    $ODTDownloadURL = ($ODTURLInfo.Links | Where-Object { $_.'data-bi-cN' -match "click here" }).href
+    $ODTDownloadURL =((Invoke-WebRequest -Uri https://www.microsoft.com/en-us/download/details.aspx?id=49117 -UseBasicParsing).Links | where href -like *officedeploymenttool*.exe).href
     $ODTDownloadFile = "$env:temp\ODT.exe"
     $ODTExtractPath = "$env:temp\ODTExtract"
     if (Test-Path $ODTExtractPath) { 
