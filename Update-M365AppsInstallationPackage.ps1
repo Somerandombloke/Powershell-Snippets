@@ -35,13 +35,13 @@
 Start-Transcript -Path "$PSScriptRoot\OfficeUpdPackage.log" -append
 $ApplicationName = "Microsoft Office 365 ProPlus en-US Current Latest x64 - Global Live" # $OfficeContentAppName
 $OfficeContentAppDTName = "Office 365 ProPlus"
-$SiteCode = "NM1" 
-$Siteserver = "nmh-sccm01.xnmh.nhs.uk" # $ProviderMachineName 
+$SiteCode = "xxx" 
+$Siteserver = "xxx.xx.xx" # $ProviderMachineName 
 $rulearray = @()
 $TargetCollectionName = "Microsoft Office 365 ProPlus x64"
 $DeadlineOffset = "27.00:00" #Format is Days.Hours:Minutes
 
-$Path = "\\nmh-sccm01\SCCM\SourceFiles\Applications\Microsoft\Microsoft_Office_365_Current_Latestx64" #$SetupPath replace with source folder on network
+$Path = "\\xxxx\SCCM\SourceFiles\Applications\Microsoft\Microsoft_Office_365_Current_Latestx64" #$SetupPath replace with source folder on network
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 #First check that download.xml exists as this is a fatal error
 if (Test-Path $path\Download.XML) {
