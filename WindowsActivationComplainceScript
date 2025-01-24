@@ -1,0 +1,23 @@
+Set-Location "$env:SystemRoot\System32"
+$productKey = (Get-WmiObject -Query "SELECT * FROM SoftwareLicensingProduct WHERE PartialProductKey IS NOT NULL")
+$partialKey = "<MAK>"
+
+if ($productKey.PartialProductKey -ne $partialKey) {
+   Write-Output "Invalid Product Key...."
+   cscript slmgr.vbs /IPK <MAK>
+   Start-sleep -Seconds 10
+   cscript slmgr.vbs /ATO
+} else {
+   Write-Output "Valid Product Key."
+}
+
+
+if ($productKey.LicenseStatus -eq 1)
+{
+    Write-Output "Windows is activated."
+} 
+else
+{
+    Write-Output "Windows is not activated"
+    cscript slmgr.vbs /ATO
+}
