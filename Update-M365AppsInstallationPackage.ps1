@@ -29,6 +29,7 @@
     2.0.0 - (2024-11-07) Updated to use Garytown logic to download latest ODT and detect/update version, changed detection method & hardcoded additional paramters
     2.0.1 - (2024-12-17) Added Deadline offset and associated logic to change deployment deadline if required (to reduce network traffic from enforced global deplyments if using MECM to update Office)
     2.0.2 - (2025-01-03) Changed ODT Download URL logic due to MS website changes
+    2.0.3 - (2025-01-24) Added TLS Setting due to failure to negotiate SSL
 #>
 
 #Set Office App Name & corresponding Deployment Type Name
@@ -46,6 +47,7 @@ $Path = "\\xxxx\SCCM\SourceFiles\Applications\Microsoft\Microsoft_Office_365_Cur
 #First check that download.xml exists as this is a fatal error
 if (Test-Path $path\Download.XML) {
 
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $ODTDownloadURL =((Invoke-WebRequest -Uri https://www.microsoft.com/en-us/download/details.aspx?id=49117 -UseBasicParsing).Links | where href -like *officedeploymenttool*.exe).href
     $ODTDownloadFile = "$env:temp\ODT.exe"
     $ODTExtractPath = "$env:temp\ODTExtract"
