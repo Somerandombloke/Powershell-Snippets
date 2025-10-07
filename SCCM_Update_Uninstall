@@ -1,0 +1,24 @@
+#Use this script with the output/manual edit or the SCCM_INstall_Uninstall script to change the uninstall command to the proposed value
+# Import the Configuration Manager module
+Import-Module "$ENV:SMS_ADMIN_UI_PATH\..\ConfigurationManager.psd1"
+
+# Connect to SCCM site
+Set-Location "xxx:"
+
+# Import CSV file
+$updates = Import-Csv -Path "C:\temp\updateuninstalls.csv"
+
+foreach ($entry in $updates) {
+    try {
+        Write-Host "Updating uninstall command for '$($entry.Application)' - DeploymentType: '$($entry.DeploymentType)'"
+        Set-CMMsiDeploymentType `
+            -ApplicationName $entry.Application `
+            -DeploymentTypeName $entry.DeploymentType `
+            -UninstallCommand $entry.ProposedUninstallCommand
+
+        Write-Host "Successfully updated uninstall command for '$($entry.DeploymentType)'"
+    }
+    catch {
+        Write-Warning "Failed to update uninstall command for '$($entry.DeploymentType)': $_"
+    }
+}
