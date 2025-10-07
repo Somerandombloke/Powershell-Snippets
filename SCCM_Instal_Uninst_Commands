@@ -1,0 +1,85 @@
+#This script is to retrieve all the uninstall commands for MSI and EXE installers to look for GUID based uninstalls.
+#The issue is that old installs may be removed from the cache and the GUID based uninstall then fails. 
+#The output is then fed into another script to update the uninstall to use the msi file instead of the GUID
+# Import SCCM module and set site location
+Write-Host "Loading Configuration Manager PowerShell module..." -ForegroundColor Cyan
+Import-Module ($ENV:SMS_ADMIN_UI_PATH.Substring(0, $ENV:SMS_ADMIN_UI_PATH.Length - 5) + '\ConfigurationManager.psd1')
+Set-Location "XXX:"
+
+# Get all applications
+Write-Host "Retrieving all SCCM applications..." -ForegroundColor Cyan
+#$allApps = Get-CMApplication
+Write-Host "Found $($allApps.Count) applications." -ForegroundColor Green
+
+# Initialize results
+$resultList = @()
+
+foreach ($app in $allApps) {
+    Write-Host "`nProcessing application: $($app.LocalizedDisplayName)" -ForegroundColor Yellow
+
+    if ($app.SDMPackageXML) {
+        try {
+            $xml = [xml]$app.SDMPackageXML
+
+            $nsMgr = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
+            $nsMgr.AddNamespace("ns", "http://schemas.microsoft.com/SystemCenterConfigurationManager/2009/AppMgmtDigest")
+
+            $deploymentTypes = $xml.SelectNodes("//ns:AppMgmtDigest/ns:DeploymentType", $nsMgr)
+            foreach ($depType in $deploymentTypes) {
+                $depName = $depType.Title.InnerText
+
+                # Install command
+                $installNode = $depType.SelectSingleNode(".//ns:Installer/ns:InstallAction/ns:Args/ns:Arg[@Name='InstallCommandLine']", $nsMgr)
+                $installCommand = if ($installNode) { $installNode.InnerText } else { "" }
+
+                # Extract installer file (.msi or .exe)
+                $installerFile = ""
+                if ($installCommand -match '"?([^"\s]+(\.msi|\.exe))"?') {
+                    $installerFile = $Matches[1]
+                }
+
+                # Original uninstall command
+                $uninstallNode = $depType.SelectSingleNode(".//ns:Installer/ns:CustomData/ns:UninstallCommandLine", $nsMgr)
+                $uninstallCommand = if ($uninstallNode) { $uninstallNode.InnerText } else { "" }
+
+                # Proposed uninstall command: replace GUID with MSI file if available
+                $proposedUninstallCommand = $uninstallCommand
+                if ($installerFile -like "*.msi" -and $uninstallCommand -match '\{[0-9A-Fa-f\-]{36}\}') {
+                    $proposedUninstallCommand = $uninstallCommand -replace '\{[0-9A-Fa-f\-]{36}\}', "`"$installerFile`""
+                }
+
+                # Output progress
+                Write-Host " ├─ Deployment Type: $depName" -ForegroundColor Cyan
+                Write-Host " │   ├─ Install Command: $installCommand" -ForegroundColor Green
+                Write-Host " │   ├─ Installer File: $installerFile" -ForegroundColor Green
+                Write-Host " │   ├─ Original Uninstall Command: $uninstallCommand" -ForegroundColor Yellow
+                Write-Host " │   └─ Proposed Uninstall Command: $proposedUninstallCommand" -ForegroundColor Magenta
+
+                # Save to results
+                $resultList += [PSCustomObject]@{
+                    Application               = $app.LocalizedDisplayName
+                    DeploymentType            = $depName
+                    InstallCommand            = $installCommand
+                    InstallerFile             = $installerFile
+                    OriginalUninstallCommand  = $uninstallCommand
+                    ProposedUninstallCommand  = $proposedUninstallCommand
+                }
+            }
+
+        } catch {
+            Write-Warning "Failed to parse SDMPackageXML for $($app.LocalizedDisplayName)"
+        }
+    } else {
+        Write-Host " └─ No SDMPackageXML found for this application." -ForegroundColor DarkGray
+    }
+}
+
+Write-Host "`nProcessing complete!" -ForegroundColor Cyan
+Write-Host "Total deployment commands found: $($resultList.Count)" -ForegroundColor Green
+
+# Output results
+$resultList | Format-Table -AutoSize
+
+# Optional: export results to CSV
+$resultList | Export-Csv "C:\Temp\SCCM_InstallUninstallCommands.csv" -NoTypeInformation
+Write-Host "Results exported to C:\Temp\SCCM_InstallUninstallCommands.csv" -ForegroundColor Cyan
