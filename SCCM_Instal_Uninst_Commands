@@ -8,7 +8,7 @@ Set-Location "XXX:"
 
 # Get all applications
 Write-Host "Retrieving all SCCM applications..." -ForegroundColor Cyan
-#$allApps = Get-CMApplication
+$allApps = Get-CMApplication
 Write-Host "Found $($allApps.Count) applications." -ForegroundColor Green
 
 # Initialize results
